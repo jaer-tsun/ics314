@@ -1,3 +1,11 @@
+This repository is for the Calendar system program for ICS 314 of Summer 2015.
+Team members: Tsun Chu, Ryan Buillard, Matt Cieslak
+
+
+
+Below is an early version of the program, not removed from this file for the moment.
+
+
 /**
  * @description   iCal first Deliverable: Create an .ics file that is readable on any public .ics
  *                related application.
