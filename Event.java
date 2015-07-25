@@ -17,9 +17,11 @@ import java.util.regex.Matcher;
 public class Event implements Comparable {
 	public String filename;
 	public String rawFile;
-	public double latitude;
-	public double longitude;
+	public Double latitude = null;
+	public Double longitude = null;
 	public int startTime;
+	public int endTime;
+	public String summary;
 	
 	/**
 	 * Event Class Constructor
@@ -36,23 +38,43 @@ public class Event implements Comparable {
 		}
 		br.close();
 		
-		//Parse the raw String to extract start time and coordinates of this event
-		Pattern timePattern = Pattern.compile(".*DTSTART:\\d{8}T(\\d{4}).*Z.*", Pattern.DOTALL); //regex to match time
-		Pattern coordPattern = Pattern.compile(".*GEO:(-?\\d+\\.?\\d*);(-?\\d+\\.?\\d*).*", Pattern.DOTALL); //regex to match coordinates
-
-		Matcher timeMatch = timePattern.matcher(rawFile);
-		Matcher coordMatch = coordPattern.matcher(rawFile);
-
-		if(timeMatch.matches()){
-			startTime = Integer.parseInt(timeMatch.group(1));
+		/* Parsing relevant fields for this event.*/
+		
+		//Parse start time.
+		Pattern startTimePattern = Pattern.compile(".*DTSTART:\\d{8}T(\\d{4}).*Z.*", Pattern.DOTALL); 
+		Matcher startTimeMatch = startTimePattern.matcher(rawFile);
+		if(startTimeMatch.matches()){
+			startTime = Integer.parseInt(startTimeMatch.group(1));
 		}else{
-			System.out.println("NO TIME MATCH");
+			System.out.println("NO START TIME MATCH");
 		}
+		
+		//Parse end time.
+		Pattern endTimePattern = Pattern.compile(".*DTEND:\\d{8}T(\\d{4}).*Z.*", Pattern.DOTALL); 
+		Matcher endTimeMatch = endTimePattern.matcher(rawFile);
+		if(endTimeMatch.matches()){
+			endTime = Integer.parseInt(endTimeMatch.group(1));
+		}else{
+			System.out.println("NO END TIME MATCH");
+		}
+		
+		//Parse coordinates.
+		Pattern coordPattern = Pattern.compile(".*GEO:(-?\\d+\\.?\\d*);(-?\\d+\\.?\\d*).*", Pattern.DOTALL); 
+		Matcher coordMatch = coordPattern.matcher(rawFile);
 		if(coordMatch.matches()){
 			latitude = Double.parseDouble(coordMatch.group(1));
 			longitude = Double.parseDouble(coordMatch.group(2));
 		}else{
-			System.out.println("NO COORD MATCH");
+			//System.out.println("no coordinates");
+		}
+		
+		//Parse summary
+		Pattern summPattern = Pattern.compile(".*SUMMARY:([^\n]+)\n.*", Pattern.DOTALL);
+		Matcher summMatch = summPattern.matcher(rawFile);
+		if(summMatch.matches()){
+			summary = summMatch.group(1);
+		}else{
+			System.out.println("NO SUMMARY MATCH");
 		}
 	}
 	
@@ -101,19 +123,91 @@ public class Event implements Comparable {
 		}
 	}
 	
+	/**
+	 * @method startTimeToString
+	 * @return the start time of this event as a String
+	 * @description Returns the start time of this event as an easy to read string, 
+	 * 				like 1:34 am.
+	 */
+	public String startTimeToString(){
+		String startTimeString = "";
+		String dayHalf;
+		
+		int hour = startTime/100;
+		int minute = startTime - (hour*100);
+		
+		if(hour > 12){
+			hour = hour - 12;
+		}
+		startTimeString += hour + ":";
+		
+		if(minute < 10){
+			startTimeString += "0" + minute;
+		}else{
+			startTimeString += minute;
+		}
+		
+		if(startTime < 1200) {
+			startTimeString += " AM";
+		}else{
+			startTimeString += " PM";
+		}
+
+		return startTimeString;
+	}
+	
+	/**
+	 * @method endTimeToString
+	 * @return the end time of this event as a String
+	 * @description Returns the end time of this event as an easy to read string, 
+	 * 				like 2:34 am.
+	 */
+	public String endTimeToString(){
+		String endTimeString = "";
+		String dayHalf;
+		
+		int hour = endTime/100;
+		int minute = endTime - (hour*100);
+		
+		if(hour > 12){
+			hour = hour - 12;
+		}
+		endTimeString += hour + ":";
+		
+		if(minute < 10){
+			endTimeString += "0" + minute;
+		}else{
+			endTimeString += minute;
+		}
+		
+		if(endTime < 1200) {
+			endTimeString += " AM";
+		}else{
+			endTimeString += " PM";
+		}
+
+		return endTimeString;
+	}
+	
 	public String getFilename(){
 		return filename;
 	}
 	public String getRawFile(){
 		return rawFile;
 	}
-	public double getLatitude(){
+	public Double getLatitude(){
 		return latitude;
 	}
-	public double getLongitude(){
+	public Double getLongitude(){
 		return longitude;
 	}
 	public int getStartTime(){
 		return startTime;
+	}
+	public int getEndTime(){
+		return endTime;
+	}
+	public String getSummary(){
+		return summary;
 	}
 }

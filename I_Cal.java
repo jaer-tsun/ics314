@@ -19,9 +19,11 @@ import java.util.List;
  * @date 2015.24.07
  */
 public class I_Cal {
-
+	static final double kmPerMile = 1.60934;
+	
 	// Main Method
 	public static void main(String args[]) throws IOException {
+
 		Scanner input = new Scanner(System.in);
 		String command = "";
 		boolean running = true;
@@ -29,7 +31,9 @@ public class I_Cal {
 	//menu options
 		while(running)
 		{
-			System.out.println("\t\tSelect Option\n\t [1] Create Event\t [2] Process Events\t [3] Exit");
+			System.out.println("\t\tSelect Option\n\t [1] Create new event and save it to a file.\n"+
+							   "\t [2] Process Events - sort multiple files and calculate distances.\n"+
+							   "\t [3] Exit\n");
 			command = input.nextLine();
 
 			
@@ -37,7 +41,7 @@ public class I_Cal {
 			{
 				case "1":   createEvent();
 							break;
-				case "2":   //storing event method implemented here
+				case "2":   processEvents();
 							break;
 				case "3":   running = false;
 							break;
@@ -46,9 +50,6 @@ public class I_Cal {
 			
 		}
 
-
-				
-		processEvents();
 	}
 	
 	/**
@@ -65,24 +66,81 @@ public class I_Cal {
 		readEvents(events);
 		
 		Collections.sort(events);
-
-		//calculate great circle distance for each event
-		for(int i = 0; i < events.size()-1; i++){
-			Event event1 = events.get(i);
-			Event event2 = events.get(i+1);				
-//what if event has no location?
-			double kmPerMile = 1.60934;
-			double distanceMi = calcDistanceV2(event1.getLatitude(), event1.getLongitude(), event2.getLatitude(), event2.getLongitude());
-			double distanceKm = distanceMi * kmPerMile;
-			event1.addComment("Great circle distance from this event to the next event is "+ distanceMi + "miles or " + distanceKm + "Km.");
-			events.set(i, event1);
+		
+		System.out.println("Sorted events: ");
+		//print each event in the arraylist with time
+		for(Event e : events){
+			System.out.println(e.getSummary() + 
+							   " occurs from " +
+							   e.startTimeToString() + " to " +
+							   e.endTimeToString());
 		}
+		
+		
+		/*calculate great circle distance for each event*/
+		boolean eventsLeft = true;
+		int index1 = 0;
+		int index2;
+	
+		
+		//Find first event with coordinates
+		Event event1 = events.get(index1);
+			
+		while((event1.getLatitude() == null) && eventsLeft){
+			index1++;
+			if(index1 >= events.size()){
+				eventsLeft = false;
+			}else{
+				event1 = events.get(index1);
+			}
+		}
+				
+		//find second event with coordinates
+		index2 = index1 + 1;
+		Event event2 = events.get(index2);		
+				
+		
+		do{
+			while((event2.getLatitude() == null) && eventsLeft){
+				index2++;
+				if(index2 >= events.size()){
+					eventsLeft = false;
+				}else{
+					event2 = events.get(index2);
+				}
+			}
+		
+			if(eventsLeft){
+				//Have two events which have coordinates; calculate distance and set comment.
+			
+				double distanceMi = calcDistanceV2(event1.getLatitude(), event1.getLongitude(), event2.getLatitude(), event2.getLongitude());
+				double distanceKm = distanceMi * kmPerMile;
+				event1.addComment("Great circle distance from this event to " + 
+									  event2.getSummary() + " is "+ 
+									  distanceMi + "miles or " + 
+									  distanceKm + "Km.");
+					
+				events.set(index1, event1);
+				index1 = index2;
+				event1 = events.get(index1);
+				index2 = index1 + 1;
+				if(index2 >= events.size()){
+					eventsLeft = false;
+				}else{
+					event2 = events.get(index2);
+				}
+			}
+		}while(eventsLeft);
+		System.out.println("\n");
+	
 		
 		try{
 			writeEventFiles(events);
 		}catch(IOException e){
 			System.out.println("Writing events failed with message " + e.getMessage());
 		}
+		
+		System.out.println("Distances written to event files as comments.\n");
 	}
 	
 	/**
